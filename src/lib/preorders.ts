@@ -29,6 +29,14 @@ export type AvailabilityRpcRow = {
   sold_out: boolean;
 };
 
+export const DEMO_PAYMENT_INSTRUCTIONS = {
+  isDemo: true,
+  method: "GCash",
+  accountName: "Brick Buddy Demo Account",
+  accountNumber: "09XX XXX XXXX",
+  notice: "DEMO ONLY — do not send real money to this account.",
+} as const;
+
 export function validatePreorderInput(input: unknown): ValidationResult {
   if (!input || typeof input !== "object") {
     return { ok: false, error: "Please complete all preorder fields." };
@@ -100,6 +108,7 @@ export function mapOrderRow(row: OrderRpcRow) {
       status: row.status,
       holdExpiresAt: row.hold_expires_at,
     },
+    paymentInstructions: DEMO_PAYMENT_INSTRUCTIONS,
     remainingSlots: row.remaining_slots,
   };
 }
