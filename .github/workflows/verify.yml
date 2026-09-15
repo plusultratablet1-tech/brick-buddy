@@ -5,6 +5,7 @@ on:
     branches:
       - build/storefront-v1
       - feature/phase1-preorder
+      - feature/launch-ready
   pull_request:
     branches:
       - main
