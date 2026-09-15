@@ -1,5 +1,5 @@
-import { requireAdmin } from "../../../../../../lib/admin-auth";
-import { getAdminOrderDetail } from "../../../../../../lib/admin-orders";
+import { requireAdmin } from "@/lib/admin-auth";
+import { getAdminOrderDetail } from "@/lib/admin-orders";
 
 export async function GET(
   request: Request,
