@@ -1,5 +1,5 @@
-import { validateAdminCredentials, type AdminCredentials } from "@/lib/admin-auth";
-import { getSupabaseServerClient } from "@/lib/supabase-server";
+import { validateAdminCredentials, type AdminCredentials } from "../../../../lib/admin-auth";
+import { getSupabaseServerClient } from "../../../../lib/supabase-server";
 
 type CreateAdminResult = { ok: true } | { ok: false };
 type SetupDependencies = {
@@ -39,7 +39,11 @@ async function createAdminWithSupabase(credentials: AdminCredentials): Promise<C
   });
 
   if (allowlistError) {
-    await supabase.auth.admin.deleteUser(data.user.id).catch(() => null);
+    try {
+      await supabase.auth.admin.deleteUser(data.user.id);
+    } catch {
+      // Best-effort rollback. The user is still not allowlisted as an admin.
+    }
     return { ok: false };
   }
 
