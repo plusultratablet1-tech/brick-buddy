@@ -4,6 +4,7 @@ import {
   type PreorderInput,
   validatePreorderInput,
 } from "../../../lib/preorders";
+import { enqueueNotification } from "../../../lib/notifications";
 import { getSupabaseServerClient } from "../../../lib/supabase-server";
 
 type RpcError = { message: string };
@@ -71,7 +72,14 @@ export async function handleCreatePreorderRequest(
       );
     }
 
-    return Response.json(mapOrderRow(row), { status: 201 });
+    const response = mapOrderRow(row);
+    void enqueueNotification({
+      recipient: validation.value.email,
+      template: "preorder_created",
+      payload: { orderNumber: row.order_number, customerName: validation.value.name },
+    });
+
+    return Response.json(response, { status: 201 });
   } catch {
     return Response.json(
       { error: "We could not create your preorder. Please try again." },
