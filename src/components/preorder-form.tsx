@@ -19,6 +19,13 @@ type PreorderSuccess = {
     status: string;
     holdExpiresAt: string;
   };
+  paymentInstructions: {
+    isDemo: boolean;
+    method: string;
+    accountName: string;
+    accountNumber: string;
+    notice: string;
+  };
   remainingSlots: number;
 };
 
@@ -216,7 +223,33 @@ export function PreorderForm() {
             <div><span>Reservation due</span><strong>{peso(success.order.reservationTotal)}</strong></div>
             <div><span>Balance after reservation</span><strong>{peso(success.order.balanceTotal)}</strong></div>
           </div>
-          <small>Payment has not been recorded yet. Keep your order number for the next step.</small>
+
+          <div className={styles.demoPayment}>
+            <div className={styles.demoPaymentHeading}>
+              <span>Demo payment step</span>
+              <strong>{success.paymentInstructions.method}</strong>
+            </div>
+            <div className={styles.demoWarning}>{success.paymentInstructions.notice}</div>
+            <div className={styles.demoAccount}>
+              <span>Account name</span>
+              <strong>{success.paymentInstructions.accountName}</strong>
+              <span>Account number</span>
+              <strong>{success.paymentInstructions.accountNumber}</strong>
+              <span>Amount to reserve</span>
+              <strong>{peso(success.order.reservationTotal)}</strong>
+            </div>
+            <div className={styles.demoSteps}>
+              <strong>What happens next</strong>
+              <ol>
+                <li>This demo represents sending the reservation amount through GCash.</li>
+                <li>Save the payment receipt or screenshot.</li>
+                <li>Open the Order Status panel using <strong>{success.order.orderNumber}</strong> and the same preorder email.</li>
+                <li>Upload the proof. The payment stays pending until an admin approves it.</li>
+              </ol>
+            </div>
+          </div>
+
+          <small>Keep your order number. Payment is only confirmed after the uploaded proof is reviewed.</small>
         </div>
       ) : null}
     </form>
