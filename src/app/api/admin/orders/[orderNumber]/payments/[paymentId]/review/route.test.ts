@@ -37,6 +37,25 @@ describe("POST admin payment review", () => {
     expect(response.status).toBe(400);
   });
 
+  it("does not review a payment that belongs to a different order URL", async () => {
+    let reviewCalls = 0;
+    const response = await handleAdminPaymentReviewRequest(
+      request({ action: "approved" }),
+      "BB-S2-001",
+      "pay-1",
+      async () => ({ id: "admin-1", email: "admin@example.com" }),
+      async () => {
+        reviewCalls += 1;
+        return { ok: true, paymentStatus: "approved", orderStatus: "reserved" };
+      },
+      async () => "BB-S2-999",
+    );
+
+    expect(response.status).toBe(404);
+    expect(reviewCalls).toBe(0);
+    expect(await response.json()).toEqual({ error: "Payment not found." });
+  });
+
   it("returns reviewed payment and order state", async () => {
     const response = await handleAdminPaymentReviewRequest(
       request({ action: "approved", adminNote: "Verified GCash" }),
@@ -49,6 +68,7 @@ describe("POST admin payment review", () => {
         expect(input.actorUserId).toBe("admin-1");
         return { ok: true, paymentStatus: "approved", orderStatus: "reserved" };
       },
+      async () => "BB-S2-001",
     );
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({ paymentStatus: "approved", orderStatus: "reserved" });
