@@ -7,6 +7,24 @@
   line-height: 1.45;
 }
 
+.previewBanner {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: -4px 0 12px;
+  padding: 11px 13px;
+  border-radius: 10px;
+  border: 1px solid #b9d5ff;
+  background: #eef5ff;
+  color: #174a82;
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.previewBanner strong {
+  font-size: 12px;
+}
+
 .availability {
   background: #fff7d4;
   border: 1px solid #f0d96e;
