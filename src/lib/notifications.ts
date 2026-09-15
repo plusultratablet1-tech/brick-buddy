@@ -34,6 +34,7 @@ type DeliveryRow = {
 
 type ProviderConfig = { apiKey?: string; from?: string };
 type ProviderSender = (message: NotificationMessage) => Promise<{ id: string }>;
+type OrderLookup = (orderNumber: string) => Promise<string | null>;
 
 export function escapeHtml(value: string) {
   return value
@@ -42,6 +43,15 @@ export function escapeHtml(value: string) {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#039;");
+}
+
+export async function resolveNotificationOrderId(
+  explicitOrderId: string | null | undefined,
+  orderNumber: string,
+  lookup: OrderLookup,
+) {
+  if (explicitOrderId) return explicitOrderId;
+  return lookup(orderNumber.trim().toUpperCase());
 }
 
 const COPY: Record<NotificationTemplate, { subject: string; heading: string; body: string }> = {
@@ -164,10 +174,24 @@ export async function enqueueNotification(input: {
 }) {
   try {
     const supabase = getSupabaseServerClient();
+    const orderId = await resolveNotificationOrderId(
+      input.orderId,
+      input.payload.orderNumber,
+      async (orderNumber) => {
+        const { data, error } = await supabase
+          .from("orders")
+          .select("id")
+          .eq("order_number", orderNumber)
+          .maybeSingle();
+        if (error || !data) return null;
+        return data.id;
+      },
+    );
+
     const { data, error } = await supabase
       .from("notification_outbox")
       .insert({
-        order_id: input.orderId ?? null,
+        order_id: orderId,
         recipient: input.recipient.trim().toLowerCase(),
         template: input.template,
         payload: JSON.parse(JSON.stringify(input.payload)),
