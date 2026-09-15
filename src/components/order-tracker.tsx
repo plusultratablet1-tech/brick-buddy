@@ -1,41 +1,29 @@
-"use client";
-
-import { FormEvent, useState } from "react";
-
-const stages = ["Reserved", "Materials secured", "Building / QC", "Balance due", "Ready to ship"];
+const stages = [
+  ["Reservation payment", "Complete within your 24-hour hold"],
+  ["Materials secured", "Your Buddy enters the batch"],
+  ["Building / QC", "Packing and quality check"],
+  ["Balance due", "Settle the remaining balance"],
+  ["Ready", "Ship or arrange meet-up"],
+];
 
 export function OrderTracker() {
-  const [activeStage, setActiveStage] = useState(1);
-  const [searched, setSearched] = useState(false);
-
-  function track(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const value = String(new FormData(event.currentTarget).get("order") || "").trim();
-    setActiveStage(value.toLowerCase().includes("ready") ? 4 : value.toLowerCase().includes("build") ? 2 : 1);
-    setSearched(true);
-  }
-
   return (
     <div className="tracker-card">
-      <span className="eyebrow">Order status</span>
-      <h3>Track your Brick Buddy</h3>
-      <p>Enter your order number or email. For this V1 preview, try <strong>BB-BUILD</strong> or <strong>BB-READY</strong>.</p>
-      <form className="track-form" onSubmit={track}>
-        <input name="order" required placeholder="Order number or email" />
-        <button className="button button-dark" type="submit">Track</button>
-      </form>
+      <span className="eyebrow">After you reserve</span>
+      <h3>What happens next?</h3>
+      <p>Your confirmation gives you a real Brick Buddy order number and holds your requested slots for 24 hours. Phase 1 does not charge you automatically.</p>
       <div className="timeline">
-        {stages.map((stage, index) => (
-          <div className={`timeline-item ${index <= activeStage ? "complete" : ""}`} key={stage}>
-            <span className="timeline-dot">{index < activeStage ? "✓" : index + 1}</span>
+        {stages.map(([stage, note], index) => (
+          <div className="timeline-item" key={stage}>
+            <span className="timeline-dot">{index + 1}</span>
             <div>
               <strong>{stage}</strong>
-              <small>{index <= activeStage ? "Updated" : "Pending"}</small>
+              <small>{note}</small>
             </div>
           </div>
         ))}
       </div>
-      {searched ? <div className="tracker-result">Latest status loaded for this preview.</div> : null}
+      <div className="tracker-result">Keep the order number shown after you reserve. Live customer status tracking will be added in a later phase.</div>
     </div>
   );
 }

@@ -9,8 +9,8 @@ const contents = [
 ];
 
 const steps = [
-  ["01", "Reserve your slot", "Choose your quantity and save a spot in the next batch."],
-  ["02", "Confirm reservation", "Complete the ₱200 reservation and send payment confirmation."],
+  ["01", "Reserve your slot", "Choose your quantity and save a spot in the next batch for 24 hours."],
+  ["02", "Confirm reservation", "Complete the ₱200-per-unit reservation while your slot is held."],
   ["03", "We prepare your Buddy", "We source, pack, check, and get your Brick Buddy ready."],
   ["04", "Ship or meet up", "Pay the remaining balance, then receive your Brick Buddy."],
 ];
@@ -24,7 +24,7 @@ const benefits = [
 export default function Home() {
   return (
     <main>
-      <div className="announcement">🚚 Season 2 preorder • 10 launch slots available <span>BRING • BUILD • BOND</span></div>
+      <div className="announcement">🚚 Season 2 preorder • 15-unit launch batch <span>BRING • BUILD • BOND</span></div>
       <header className="site-header">
         <a className="brand" href="#top" aria-label="Brick Buddy home">
           <span className="brand-mark">B</span>
@@ -134,7 +134,7 @@ export default function Home() {
       </section>
 
       <section className="order-section" id="preorder">
-        <div className="order-heading"><span className="eyebrow">First Season 2 batch</span><h2>Ready to bring a Buddy home?</h2><p>We&apos;re starting small: 10 preorder slots, then we build the next batch based on real demand.</p></div>
+        <div className="order-heading"><span className="eyebrow">First Season 2 batch</span><h2>Ready to bring a Buddy home?</h2><p>We&apos;re starting small with 15 units. The form below checks the remaining launch slots live before your reservation is created.</p></div>
         <div className="order-grid"><PreorderForm /><OrderTracker /></div>
       </section>
 
@@ -142,7 +142,8 @@ export default function Home() {
         <div className="faq-heading"><span className="eyebrow">Need to know</span><h2>Frequently asked questions</h2></div>
         <div className="faq-list">
           <details><summary>What comes with one Brick Buddy?<span>+</span></summary><p>A portable case, 12 colorful 2×4 building bricks, one 6×10 build plate, and one Surprise Buddy character figure.</p></details>
-          <details><summary>How much is the Season 2 preorder?<span>+</span></summary><p>The working Season 2 price is ₱449: ₱200 to reserve the slot and ₱249 remaining before fulfillment.</p></details>
+          <details><summary>How much is the Season 2 preorder?<span>+</span></summary><p>Season 2 is ₱449 per unit: ₱200 to reserve the slot and ₱249 remaining before fulfillment.</p></details>
+          <details><summary>How long is my slot held?<span>+</span></summary><p>After you create an order, your requested units are held for 24 hours while the reservation payment is completed. An unpaid hold can expire and return those units to the batch.</p></details>
           <details><summary>How long does preorder take?<span>+</span></summary><p>The current small-batch target is roughly 10–12 days from preorder opening through assembly and initial fulfillment, depending on material arrival.</p></details>
           <details><summary>Can I choose the Surprise Buddy?<span>+</span></summary><p>No. The figure is intentionally random. Buying more units does not improve or change the chance of receiving a special figure.</p></details>
         </div>

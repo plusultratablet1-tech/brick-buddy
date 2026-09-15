@@ -1,0 +1,117 @@
+.availability,
+.availabilityWarning {
+  margin: -4px 0 20px;
+  padding: 11px 13px;
+  border-radius: 10px;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.availability {
+  background: #fff7d4;
+  border: 1px solid #f0d96e;
+  color: #594500;
+}
+
+.availability strong {
+  font-size: 16px;
+}
+
+.availabilityWarning {
+  background: #f5f3ed;
+  color: #666158;
+  border: 1px solid #dfdbd1;
+}
+
+.priceSummary {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 7px 18px;
+  margin: 16px 0 13px;
+  padding: 14px 15px;
+  border: 1px solid #e3e0d8;
+  border-radius: 11px;
+  background: #fbfaf7;
+  font-size: 12px;
+}
+
+.priceSummary span {
+  color: #6b6b66;
+}
+
+.priceSummary strong {
+  text-align: right;
+}
+
+.errorMessage {
+  margin-top: 13px;
+  padding: 11px 13px;
+  border-radius: 9px;
+  background: #fff0f0;
+  color: #a12626;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.45;
+}
+
+.confirmation {
+  margin-top: 16px;
+  padding: 18px;
+  border-radius: 14px;
+  background: #eaf9f1;
+  border: 1px solid #bce7d1;
+  color: #115a3c;
+}
+
+.confirmationLabel {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: .11em;
+  text-transform: uppercase;
+}
+
+.orderNumber {
+  display: block;
+  color: #0d3d2a;
+  font-size: 27px;
+  letter-spacing: -.02em;
+}
+
+.confirmation p {
+  margin: 9px 0 14px;
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.confirmationGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 9px;
+  margin-bottom: 12px;
+}
+
+.confirmationGrid div {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 10px;
+  border-radius: 9px;
+  background: rgba(255, 255, 255, .72);
+}
+
+.confirmationGrid span,
+.confirmation small {
+  font-size: 10px;
+}
+
+.confirmationGrid strong {
+  font-size: 16px;
+}
+
+@media (max-width: 640px) {
+  .confirmationGrid {
+    grid-template-columns: 1fr;
+  }
+}
