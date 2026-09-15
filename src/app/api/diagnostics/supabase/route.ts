@@ -1,3 +1,4 @@
+// Temporary deployment diagnostic; remove after preview verification.
 import { getSupabaseServerClient } from "../../../../lib/supabase-server";
 
 type DiagnosticCategory =
