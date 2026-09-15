@@ -62,11 +62,17 @@ export async function getAdminOrderDetail(orderNumber: string) {
     }),
   );
 
+  const balanceApproved = (payments ?? []).some(
+    (payment) => payment.kind === "balance" && payment.status === "approved",
+  );
+
   return {
     order,
     payments: paymentViews,
     events: events ?? [],
     notifications: notifications ?? [],
-    allowedTransitions: isOrderStatus(order.status) ? getAllowedTransitions(order.status) : [],
+    allowedTransitions: isOrderStatus(order.status)
+      ? getAllowedTransitions(order.status, { balanceApproved })
+      : [],
   };
 }
