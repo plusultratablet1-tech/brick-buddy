@@ -3,6 +3,7 @@ import {
   attemptNotificationDelivery,
   escapeHtml,
   renderNotification,
+  resolveNotificationOrderId,
 } from "./notifications";
 
 describe("notifications", () => {
@@ -38,6 +39,26 @@ describe("notifications", () => {
       orderNumber: "BB-S2-001",
       message: "<script>alert(1)</script>",
     }).html).not.toContain("<script>");
+  });
+
+  it("links a notification to its order when no order id was supplied", async () => {
+    let lookedUp = "";
+    const orderId = await resolveNotificationOrderId(null, "BB-S2-001", async (orderNumber) => {
+      lookedUp = orderNumber;
+      return "order-123";
+    });
+    expect(lookedUp).toBe("BB-S2-001");
+    expect(orderId).toBe("order-123");
+  });
+
+  it("keeps an explicit order id without doing another lookup", async () => {
+    let calls = 0;
+    const orderId = await resolveNotificationOrderId("order-123", "BB-S2-001", async () => {
+      calls += 1;
+      return "wrong";
+    });
+    expect(calls).toBe(0);
+    expect(orderId).toBe("order-123");
   });
 
   it("skips delivery when email provider configuration is missing", async () => {
