@@ -50,6 +50,7 @@ export type Database = {
       };
       get_preorder_availability: { Args: never; Returns: { capacity: number; remaining_slots: number; sold_out: boolean }[] };
       review_payment: { Args: { p_action: string; p_actor_user_id?: string; p_admin_note?: string; p_payment_id: string }; Returns: { order_number: string; order_status: string; payment_id: string; payment_status: string }[] };
+      submit_payment_proof: { Args: { p_order_number: string; p_email: string; p_kind: string; p_submitted_amount: number; p_customer_note: string; p_proof_path: string; p_proof_mime_type: string; p_proof_original_name: string }; Returns: { payment_id: string; payment_kind: string; payment_status: string }[] };
       transition_order_status: { Args: { p_actor_user_id?: string; p_message?: string; p_order_number: string; p_to_status: string }; Returns: { from_status: string; order_number: string; to_status: string; updated_at: string }[] };
     };
     Enums: { [_ in never]: never };
