@@ -97,6 +97,30 @@ export function validatePreorderInput(input: unknown): ValidationResult {
   };
 }
 
+export function buildDemoPreorderPreview(
+  quantity: number,
+  now = new Date(),
+  remainingSlots = 15,
+) {
+  if (!Number.isInteger(quantity) || quantity < 1 || quantity > 3) {
+    throw new Error("INVALID_DEMO_QUANTITY");
+  }
+
+  return {
+    order: {
+      orderNumber: "BB-DEMO-001",
+      quantity,
+      totalAmount: 449 * quantity,
+      reservationTotal: 200 * quantity,
+      balanceTotal: 249 * quantity,
+      status: "awaiting_payment",
+      holdExpiresAt: new Date(now.getTime() + 24 * 60 * 60 * 1000).toISOString(),
+    },
+    paymentInstructions: DEMO_PAYMENT_INSTRUCTIONS,
+    remainingSlots,
+  };
+}
+
 export function mapOrderRow(row: OrderRpcRow) {
   return {
     order: {
