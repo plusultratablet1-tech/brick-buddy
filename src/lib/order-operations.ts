@@ -13,8 +13,12 @@ export const STATUS_LABELS = {
 
 export type OrderStatus = keyof typeof STATUS_LABELS;
 
+type TransitionOptions = {
+  balanceApproved?: boolean;
+};
+
 const ALLOWED_TRANSITIONS: Record<OrderStatus, readonly OrderStatus[]> = {
-  awaiting_payment: ["reserved", "cancelled", "expired"],
+  awaiting_payment: ["cancelled", "expired"],
   reserved: ["materials_secured", "cancelled"],
   materials_secured: ["building_qc", "cancelled"],
   building_qc: ["balance_due", "cancelled"],
@@ -27,7 +31,6 @@ const ALLOWED_TRANSITIONS: Record<OrderStatus, readonly OrderStatus[]> = {
 };
 
 export const NEXT_STATUS: Partial<Record<OrderStatus, OrderStatus>> = {
-  awaiting_payment: "reserved",
   reserved: "materials_secured",
   materials_secured: "building_qc",
   building_qc: "balance_due",
@@ -45,6 +48,10 @@ export function validateStatusTransition(from: string, to: string) {
   return ALLOWED_TRANSITIONS[from].includes(to);
 }
 
-export function getAllowedTransitions(status: OrderStatus) {
-  return [...ALLOWED_TRANSITIONS[status]];
+export function getAllowedTransitions(status: OrderStatus, options: TransitionOptions = {}) {
+  const transitions = [...ALLOWED_TRANSITIONS[status]];
+  if (status === "balance_due" && options.balanceApproved !== true) {
+    return transitions.filter((transition) => transition !== "ready");
+  }
+  return transitions;
 }
