@@ -1,16 +1,134 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
+import styles from "./preorder-form.module.css";
+
+type Availability = {
+  capacity: number;
+  remainingSlots: number;
+  soldOut: boolean;
+};
+
+type PreorderSuccess = {
+  order: {
+    orderNumber: string;
+    quantity: number;
+    totalAmount: number;
+    reservationTotal: number;
+    balanceTotal: number;
+    status: string;
+    holdExpiresAt: string;
+  };
+  remainingSlots: number;
+};
+
+const UNIT_PRICE = 449;
+const RESERVATION_PER_UNIT = 200;
+const BALANCE_PER_UNIT = 249;
+
+function peso(value: number) {
+  return `₱${value.toLocaleString("en-PH")}`;
+}
 
 export function PreorderForm() {
-  const [message, setMessage] = useState("");
+  const [availability, setAvailability] = useState<Availability | null>(null);
+  const [availabilityError, setAvailabilityError] = useState("");
+  const [quantity, setQuantity] = useState(1);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState<PreorderSuccess | null>(null);
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  useEffect(() => {
+    let active = true;
+
+    async function loadAvailability() {
+      try {
+        const response = await fetch("/api/preorders/availability", { cache: "no-store" });
+        const body = await response.json();
+
+        if (!response.ok) {
+          throw new Error(body?.error || "Availability unavailable");
+        }
+
+        if (active) {
+          setAvailability(body);
+          setAvailabilityError("");
+          if (body.remainingSlots > 0) {
+            setQuantity((current) => Math.min(current, body.remainingSlots, 3));
+          }
+        }
+      } catch {
+        if (active) {
+          setAvailabilityError("Live slot count is temporarily unavailable. Final availability will be checked when you reserve.");
+        }
+      }
+    }
+
+    loadAvailability();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const data = new FormData(event.currentTarget);
-    const name = String(data.get("name") || "there").trim() || "there";
-    setMessage(`Thanks, ${name}! Your Brick Buddy preorder details are ready for confirmation.`);
+    const form = event.currentTarget;
+    const data = new FormData(form);
+
+    setSubmitting(true);
+    setError("");
+    setSuccess(null);
+
+    try {
+      const response = await fetch("/api/preorders", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          name: String(data.get("name") || ""),
+          email: String(data.get("email") || ""),
+          mobile: String(data.get("mobile") || ""),
+          quantity: Number(data.get("quantity")),
+          fulfillment: String(data.get("fulfillment") || ""),
+        }),
+      });
+
+      const body = await response.json();
+
+      if (!response.ok) {
+        setError(body?.error || "We could not create your preorder. Please try again.");
+        if (response.status === 409) {
+          const availabilityResponse = await fetch("/api/preorders/availability", { cache: "no-store" });
+          if (availabilityResponse.ok) {
+            const latest = await availabilityResponse.json();
+            setAvailability(latest);
+          }
+        }
+        return;
+      }
+
+      const result = body as PreorderSuccess;
+      setSuccess(result);
+      setAvailability((current) => ({
+        capacity: current?.capacity ?? 15,
+        remainingSlots: result.remainingSlots,
+        soldOut: result.remainingSlots === 0,
+      }));
+      form.reset();
+      setQuantity(1);
+    } catch {
+      setError("We could not reach the preorder service. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
   }
+
+  const soldOut = availability?.soldOut || availability?.remainingSlots === 0;
+  const holdDeadline = success
+    ? new Date(success.order.holdExpiresAt).toLocaleString("en-PH", {
+        dateStyle: "medium",
+        timeStyle: "short",
+      })
+    : "";
 
   return (
     <form className="preorder-form" onSubmit={handleSubmit}>
@@ -20,44 +138,87 @@ export function PreorderForm() {
           <h3>Reserve your Brick Buddy</h3>
         </div>
         <div className="price-badge">
-          <strong>₱449</strong>
-          <span>₱200 reserve</span>
+          <strong>{peso(UNIT_PRICE * quantity)}</strong>
+          <span>{peso(RESERVATION_PER_UNIT * quantity)} reserve</span>
         </div>
       </div>
+
+      {availability ? (
+        <div className={styles.availability} aria-live="polite">
+          <strong>{availability.remainingSlots}</strong> of {availability.capacity} launch slots remaining
+        </div>
+      ) : availabilityError ? (
+        <div className={styles.availabilityWarning}>{availabilityError}</div>
+      ) : (
+        <div className={styles.availability}>Checking live launch availability…</div>
+      )}
+
       <label>
         Parent / Guardian name
-        <input name="name" required placeholder="Your name" />
+        <input name="name" required maxLength={120} placeholder="Your name" autoComplete="name" />
       </label>
       <label>
         Email address
-        <input name="email" type="email" required placeholder="you@example.com" />
+        <input name="email" type="email" required maxLength={254} placeholder="you@example.com" autoComplete="email" />
       </label>
       <div className="form-row">
         <label>
           Mobile number
-          <input name="mobile" required placeholder="09xx xxx xxxx" />
+          <input name="mobile" required maxLength={32} placeholder="09xx xxx xxxx" inputMode="tel" autoComplete="tel" />
         </label>
         <label>
           Quantity
-          <select name="quantity" defaultValue="1">
-            <option value="1">1 case</option>
-            <option value="2">2 cases</option>
-            <option value="3">3 cases</option>
+          <select
+            name="quantity"
+            value={quantity}
+            onChange={(event) => setQuantity(Number(event.target.value))}
+            disabled={soldOut}
+          >
+            {[1, 2, 3].map((value) => (
+              <option
+                value={value}
+                key={value}
+                disabled={availability ? value > availability.remainingSlots : false}
+              >
+                {value} {value === 1 ? "case" : "cases"}
+              </option>
+            ))}
           </select>
         </label>
       </div>
       <label>
         Preferred fulfillment
-        <select name="fulfillment" defaultValue="shipping">
+        <select name="fulfillment" defaultValue="shipping" disabled={soldOut}>
           <option value="shipping">Shipping</option>
           <option value="meetup">Meet-up</option>
         </select>
       </label>
-      <button className="button button-primary form-submit" type="submit">
-        Reserve my slot <span>→</span>
+
+      <div className={styles.priceSummary}>
+        <span>Reservation due</span><strong>{peso(RESERVATION_PER_UNIT * quantity)}</strong>
+        <span>Remaining balance</span><strong>{peso(BALANCE_PER_UNIT * quantity)}</strong>
+      </div>
+
+      <button className="button button-primary form-submit" type="submit" disabled={submitting || soldOut}>
+        {soldOut ? "Launch batch sold out" : submitting ? "Reserving…" : "Reserve my slot"}
+        {!soldOut && !submitting ? <span>→</span> : null}
       </button>
-      <p className="form-note">V1 demo: no payment is charged on this page yet. We’ll connect live reservations and payment proof next.</p>
-      {message ? <div className="success-message">✓ {message}</div> : null}
+      <p className="form-note">Submitting reserves your slot for 24 hours. No payment is charged on this page, and payment is not considered received until separately confirmed.</p>
+
+      {error ? <div className={styles.errorMessage} role="alert">{error}</div> : null}
+
+      {success ? (
+        <div className={styles.confirmation} role="status">
+          <span className={styles.confirmationLabel}>Reservation created</span>
+          <strong className={styles.orderNumber}>{success.order.orderNumber}</strong>
+          <p>Your {success.order.quantity === 1 ? "slot is" : `${success.order.quantity} slots are`} held until <strong>{holdDeadline}</strong> while you complete the reservation payment.</p>
+          <div className={styles.confirmationGrid}>
+            <div><span>Reservation due</span><strong>{peso(success.order.reservationTotal)}</strong></div>
+            <div><span>Balance after reservation</span><strong>{peso(success.order.balanceTotal)}</strong></div>
+          </div>
+          <small>Payment has not been recorded yet. Keep your order number for the next step.</small>
+        </div>
+      ) : null}
     </form>
   );
 }
