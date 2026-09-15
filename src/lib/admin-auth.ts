@@ -3,6 +3,7 @@ import { getSupabaseServerClient } from "./supabase-server";
 
 export const ADMIN_COOKIE = "brick_buddy_admin";
 export const ADMIN_AUTH_ERROR = "Invalid admin credentials.";
+const BRICK_BUDDY_PUBLISHABLE_KEY = "sb_publishable_oM_R57m0qiWE9zob_tCQ6A_Q_9vAw17";
 
 export type AdminCredentials = { email: string; password: string };
 
@@ -24,10 +25,14 @@ export function validateAdminCredentials(input: unknown):
   return { ok: true, value: { email, password } };
 }
 
+export function resolveSupabasePublishableKey(configuredKey: string | undefined) {
+  return configuredKey?.trim() || BRICK_BUDDY_PUBLISHABLE_KEY;
+}
+
 function getAuthClient() {
   const url = process.env.SUPABASE_URL;
-  const key = process.env.SUPABASE_PUBLISHABLE_KEY;
-  if (!url || !key) throw new Error("Supabase auth configuration is missing.");
+  const key = resolveSupabasePublishableKey(process.env.SUPABASE_PUBLISHABLE_KEY);
+  if (!url) throw new Error("Supabase auth configuration is missing.");
   return createClient(url, key, {
     auth: { autoRefreshToken: false, persistSession: false, detectSessionInUrl: false },
   });
