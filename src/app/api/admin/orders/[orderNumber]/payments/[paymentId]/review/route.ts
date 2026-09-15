@@ -7,8 +7,27 @@ type Authorize = (request: Request) => Promise<AdminUser | null>;
 type ReviewInput = { orderNumber: string; paymentId: string; action: "approved" | "rejected"; adminNote: string | null; actorUserId: string };
 type ReviewResult = { ok: true; paymentStatus: string; orderStatus: string } | { ok: false; status: number; error: string };
 type ReviewPayment = (input: ReviewInput) => Promise<ReviewResult>;
+type PaymentOrderLookup = (paymentId: string) => Promise<string | null>;
 
 function normalizeOrderNumber(value: string) { return value.trim().toUpperCase(); }
+
+async function getPaymentOrderNumberWithSupabase(paymentId: string): Promise<string | null> {
+  const supabase = getSupabaseServerClient();
+  const { data: payment, error: paymentError } = await supabase
+    .from("payments")
+    .select("order_id")
+    .eq("id", paymentId)
+    .maybeSingle();
+  if (paymentError || !payment) return null;
+
+  const { data: order, error: orderError } = await supabase
+    .from("orders")
+    .select("order_number")
+    .eq("id", payment.order_id)
+    .maybeSingle();
+  if (orderError || !order) return null;
+  return order.order_number;
+}
 
 async function reviewPaymentWithSupabase(input: ReviewInput): Promise<ReviewResult> {
   const supabase = getSupabaseServerClient();
@@ -37,16 +56,31 @@ async function reviewPaymentWithSupabase(input: ReviewInput): Promise<ReviewResu
   return { ok: true, paymentStatus: row.payment_status, orderStatus: row.order_status };
 }
 
-export async function handleAdminPaymentReviewRequest(request: Request, orderNumber: string, paymentId: string, authorize: Authorize = requireAdmin, reviewPayment: ReviewPayment = reviewPaymentWithSupabase): Promise<Response> {
+export async function handleAdminPaymentReviewRequest(
+  request: Request,
+  orderNumber: string,
+  paymentId: string,
+  authorize: Authorize = requireAdmin,
+  reviewPayment: ReviewPayment = reviewPaymentWithSupabase,
+  getPaymentOrderNumber: PaymentOrderLookup = getPaymentOrderNumberWithSupabase,
+): Promise<Response> {
   const admin = await authorize(request);
   if (!admin) return Response.json({ error: "Unauthorized." }, { status: 401 });
+
   let body: unknown;
   try { body = await request.json(); } catch { return Response.json({ error: "Invalid request." }, { status: 400 }); }
   if (!body || typeof body !== "object") return Response.json({ error: "Invalid request." }, { status: 400 });
   const record = body as Record<string, unknown>;
   if (record.action !== "approved" && record.action !== "rejected") return Response.json({ error: "Choose approved or rejected." }, { status: 400 });
+
+  const normalizedOrderNumber = normalizeOrderNumber(orderNumber);
+  const paymentOrderNumber = await getPaymentOrderNumber(paymentId);
+  if (paymentOrderNumber !== normalizedOrderNumber) {
+    return Response.json({ error: "Payment not found." }, { status: 404 });
+  }
+
   const adminNote = typeof record.adminNote === "string" && record.adminNote.trim() ? record.adminNote.trim().slice(0, 1000) : null;
-  const result = await reviewPayment({ orderNumber: normalizeOrderNumber(orderNumber), paymentId, action: record.action, adminNote, actorUserId: admin.id });
+  const result = await reviewPayment({ orderNumber: normalizedOrderNumber, paymentId, action: record.action, adminNote, actorUserId: admin.id });
   if (!result.ok) return Response.json({ error: result.error }, { status: result.status });
   return Response.json({ paymentStatus: result.paymentStatus, orderStatus: result.orderStatus }, { status: 200 });
 }
