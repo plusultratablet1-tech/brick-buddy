@@ -9,6 +9,22 @@ const validBody = {
   fulfillment: "shipping",
 };
 
+const orderResult = {
+  data: [
+    {
+      order_number: "BB-S2-001",
+      quantity: 1,
+      total_amount: 449,
+      reservation_total: 200,
+      balance_total: 249,
+      status: "awaiting_payment",
+      hold_expires_at: "2026-09-16T03:00:00.000Z",
+      remaining_slots: 14,
+    },
+  ],
+  error: null,
+};
+
 describe("POST /api/preorders", () => {
   it("returns 400 before calling the database when input is invalid", async () => {
     let calls = 0;
@@ -34,21 +50,7 @@ describe("POST /api/preorders", () => {
       body: JSON.stringify(validBody),
     });
 
-    const response = await handleCreatePreorderRequest(request, async () => ({
-      data: [
-        {
-          order_number: "BB-S2-001",
-          quantity: 1,
-          total_amount: 449,
-          reservation_total: 200,
-          balance_total: 249,
-          status: "awaiting_payment",
-          hold_expires_at: "2026-09-16T03:00:00.000Z",
-          remaining_slots: 14,
-        },
-      ],
-      error: null,
-    }));
+    const response = await handleCreatePreorderRequest(request, async () => orderResult);
 
     expect(response.status).toBe(201);
     expect(await response.json()).toEqual({
@@ -63,6 +65,51 @@ describe("POST /api/preorders", () => {
       },
       remainingSlots: 14,
     });
+  });
+
+  it("waits for the preorder notification to be durably enqueued before responding", async () => {
+    const request = new Request("http://localhost/api/preorders", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(validBody),
+    });
+
+    let release!: () => void;
+    const gate = new Promise<void>((resolve) => { release = resolve; });
+    let settled = false;
+    const responsePromise = handleCreatePreorderRequest(
+      request,
+      async () => orderResult,
+      async () => {
+        await gate;
+        return "notification-1";
+      },
+    ).then((response) => {
+      settled = true;
+      return response;
+    });
+
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(settled).toBe(false);
+    release();
+    expect((await responsePromise).status).toBe(201);
+  });
+
+  it("keeps a successful preorder successful if notification enqueue fails", async () => {
+    const request = new Request("http://localhost/api/preorders", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(validBody),
+    });
+
+    const response = await handleCreatePreorderRequest(
+      request,
+      async () => orderResult,
+      async () => { throw new Error("email provider unavailable"); },
+    );
+
+    expect(response.status).toBe(201);
   });
 
   it("returns 409 when Supabase reports insufficient slots", async () => {
