@@ -29,6 +29,14 @@ export type AvailabilityRpcRow = {
   sold_out: boolean;
 };
 
+export const DEMO_PAYMENT_INSTRUCTIONS = {
+  isDemo: true,
+  method: "GCash",
+  accountName: "Brick Buddy Demo Account",
+  accountNumber: "09XX XXX XXXX",
+  notice: "DEMO ONLY — do not send real money to this account.",
+} as const;
+
 export function validatePreorderInput(input: unknown): ValidationResult {
   if (!input || typeof input !== "object") {
     return { ok: false, error: "Please complete all preorder fields." };
@@ -89,6 +97,30 @@ export function validatePreorderInput(input: unknown): ValidationResult {
   };
 }
 
+export function buildDemoPreorderPreview(
+  quantity: number,
+  now = new Date(),
+  remainingSlots = 15,
+) {
+  if (!Number.isInteger(quantity) || quantity < 1 || quantity > 3) {
+    throw new Error("INVALID_DEMO_QUANTITY");
+  }
+
+  return {
+    order: {
+      orderNumber: "BB-DEMO-001",
+      quantity,
+      totalAmount: 449 * quantity,
+      reservationTotal: 200 * quantity,
+      balanceTotal: 249 * quantity,
+      status: "awaiting_payment",
+      holdExpiresAt: new Date(now.getTime() + 24 * 60 * 60 * 1000).toISOString(),
+    },
+    paymentInstructions: DEMO_PAYMENT_INSTRUCTIONS,
+    remainingSlots,
+  };
+}
+
 export function mapOrderRow(row: OrderRpcRow) {
   return {
     order: {
@@ -100,6 +132,7 @@ export function mapOrderRow(row: OrderRpcRow) {
       status: row.status,
       holdExpiresAt: row.hold_expires_at,
     },
+    paymentInstructions: DEMO_PAYMENT_INSTRUCTIONS,
     remainingSlots: row.remaining_slots,
   };
 }

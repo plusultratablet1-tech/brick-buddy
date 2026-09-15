@@ -7,6 +7,24 @@
   line-height: 1.45;
 }
 
+.previewBanner {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: -4px 0 12px;
+  padding: 11px 13px;
+  border-radius: 10px;
+  border: 1px solid #b9d5ff;
+  background: #eef5ff;
+  color: #174a82;
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.previewBanner strong {
+  font-size: 12px;
+}
+
 .availability {
   background: #fff7d4;
   border: 1px solid #f0d96e;
@@ -110,8 +128,109 @@
   font-size: 16px;
 }
 
+.demoPayment {
+  margin: 14px 0;
+  padding: 14px;
+  border-radius: 12px;
+  border: 2px dashed #f0b429;
+  background: #fffaf0;
+  color: #4f3b00;
+}
+
+.demoPaymentHeading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 9px;
+}
+
+.demoPaymentHeading span {
+  padding: 5px 8px;
+  border-radius: 999px;
+  background: #ffe7a3;
+  color: #684900;
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+
+.demoPaymentHeading strong {
+  font-size: 17px;
+}
+
+.demoWarning {
+  margin-bottom: 11px;
+  padding: 9px 10px;
+  border-radius: 9px;
+  background: #fff0f0;
+  color: #a12626;
+  font-size: 11px;
+  font-weight: 900;
+  line-height: 1.4;
+}
+
+.demoAccount {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 6px 14px;
+  padding: 12px;
+  border-radius: 10px;
+  background: #fff;
+  border: 1px solid #eee3c6;
+}
+
+.demoAccount span {
+  color: #75643b;
+  font-size: 10px;
+}
+
+.demoAccount strong {
+  text-align: right;
+  font-size: 12px;
+}
+
+.demoSteps {
+  margin-top: 12px;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.demoSteps > strong {
+  display: block;
+  margin-bottom: 4px;
+}
+
+.demoSteps ol {
+  margin: 0;
+  padding-left: 18px;
+}
+
+.demoSteps li + li {
+  margin-top: 4px;
+}
+
 @media (max-width: 640px) {
   .confirmationGrid {
     grid-template-columns: 1fr;
+  }
+
+  .demoPaymentHeading,
+  .demoAccount {
+    align-items: flex-start;
+  }
+
+  .demoPaymentHeading {
+    flex-direction: column;
+  }
+
+  .demoAccount {
+    grid-template-columns: 1fr;
+  }
+
+  .demoAccount strong {
+    text-align: left;
+    margin-bottom: 5px;
   }
 }

@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import * as preordersModule from "./preorders";
 import {
   mapAvailabilityRow,
   mapOrderRow,
@@ -82,7 +83,7 @@ describe("validatePreorderInput", () => {
 });
 
 describe("database response mapping", () => {
-  it("maps an order RPC row to the public API shape", () => {
+  it("maps an order RPC row to the public API shape with demo payment instructions", () => {
     expect(
       mapOrderRow({
         order_number: "BB-S2-001",
@@ -104,6 +105,13 @@ describe("database response mapping", () => {
         status: "awaiting_payment",
         holdExpiresAt: "2026-09-16T03:00:00.000Z",
       },
+      paymentInstructions: {
+        isDemo: true,
+        method: "GCash",
+        accountName: "Brick Buddy Demo Account",
+        accountNumber: "09XX XXX XXXX",
+        notice: "DEMO ONLY — do not send real money to this account.",
+      },
       remainingSlots: 13,
     });
   });
@@ -116,5 +124,33 @@ describe("database response mapping", () => {
         sold_out: false,
       }),
     ).toEqual({ capacity: 15, remainingSlots: 7, soldOut: false });
+  });
+});
+
+describe("demo preorder preview", () => {
+  it("builds a fake success response without requiring a database order", () => {
+    const buildDemo = (preordersModule as Record<string, unknown>).buildDemoPreorderPreview;
+    expect(buildDemo).toBeTypeOf("function");
+    if (typeof buildDemo !== "function") return;
+
+    expect(buildDemo(2, new Date("2026-09-16T00:00:00.000Z"), 15)).toEqual({
+      order: {
+        orderNumber: "BB-DEMO-001",
+        quantity: 2,
+        totalAmount: 898,
+        reservationTotal: 400,
+        balanceTotal: 498,
+        status: "awaiting_payment",
+        holdExpiresAt: "2026-09-17T00:00:00.000Z",
+      },
+      paymentInstructions: {
+        isDemo: true,
+        method: "GCash",
+        accountName: "Brick Buddy Demo Account",
+        accountNumber: "09XX XXX XXXX",
+        notice: "DEMO ONLY — do not send real money to this account.",
+      },
+      remainingSlots: 15,
+    });
   });
 });

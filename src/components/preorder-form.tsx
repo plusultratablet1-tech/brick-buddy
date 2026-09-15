@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
+import { buildDemoPreorderPreview, validatePreorderInput } from "../lib/preorders";
 import styles from "./preorder-form.module.css";
 
 type Availability = {
@@ -19,12 +20,20 @@ type PreorderSuccess = {
     status: string;
     holdExpiresAt: string;
   };
+  paymentInstructions: {
+    isDemo: boolean;
+    method: string;
+    accountName: string;
+    accountNumber: string;
+    notice: string;
+  };
   remainingSlots: number;
 };
 
 const UNIT_PRICE = 449;
 const RESERVATION_PER_UNIT = 200;
 const BALANCE_PER_UNIT = 249;
+const DEMO_PREVIEW_MODE = true;
 
 function peso(value: number) {
   return `₱${value.toLocaleString("en-PH")}`;
@@ -74,22 +83,42 @@ export function PreorderForm() {
     event.preventDefault();
     const form = event.currentTarget;
     const data = new FormData(form);
+    const payload = {
+      name: String(data.get("name") || ""),
+      email: String(data.get("email") || ""),
+      mobile: String(data.get("mobile") || ""),
+      quantity: Number(data.get("quantity")),
+      fulfillment: String(data.get("fulfillment") || ""),
+    };
 
     setSubmitting(true);
     setError("");
     setSuccess(null);
 
+    if (DEMO_PREVIEW_MODE) {
+      const validation = validatePreorderInput(payload);
+      if (!validation.ok) {
+        setError(validation.error);
+        setSubmitting(false);
+        return;
+      }
+
+      setSuccess(
+        buildDemoPreorderPreview(
+          validation.value.quantity,
+          new Date(),
+          availability?.remainingSlots ?? 15,
+        ),
+      );
+      setSubmitting(false);
+      return;
+    }
+
     try {
       const response = await fetch("/api/preorders", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          name: String(data.get("name") || ""),
-          email: String(data.get("email") || ""),
-          mobile: String(data.get("mobile") || ""),
-          quantity: Number(data.get("quantity")),
-          fulfillment: String(data.get("fulfillment") || ""),
-        }),
+        body: JSON.stringify(payload),
       });
 
       const body = await response.json();
@@ -142,6 +171,13 @@ export function PreorderForm() {
           <span>{peso(RESERVATION_PER_UNIT * quantity)} reserve</span>
         </div>
       </div>
+
+      {DEMO_PREVIEW_MODE ? (
+        <div className={styles.previewBanner}>
+          <strong>Demo preview mode</strong>
+          <span>Try the form safely. It will show the payment experience without creating a database order or using a launch slot.</span>
+        </div>
+      ) : null}
 
       {availability ? (
         <div className={styles.availability} aria-live="polite">
@@ -200,23 +236,60 @@ export function PreorderForm() {
       </div>
 
       <button className="button button-primary form-submit" type="submit" disabled={submitting || soldOut}>
-        {soldOut ? "Launch batch sold out" : submitting ? "Reserving…" : "Reserve my slot"}
+        {soldOut
+          ? "Launch batch sold out"
+          : submitting
+            ? DEMO_PREVIEW_MODE ? "Loading demo…" : "Reserving…"
+            : DEMO_PREVIEW_MODE ? "Show demo payment step" : "Reserve my slot"}
         {!soldOut && !submitting ? <span>→</span> : null}
       </button>
-      <p className="form-note">Submitting reserves your slot for 24 hours. No payment is charged on this page, and payment is not considered received until separately confirmed.</p>
+      <p className="form-note">
+        {DEMO_PREVIEW_MODE
+          ? "Preview only: submitting here does not create an order, send a payment, or change the 15-unit batch."
+          : "Submitting reserves your slot for 24 hours. No payment is charged on this page, and payment is not considered received until separately confirmed."}
+      </p>
 
       {error ? <div className={styles.errorMessage} role="alert">{error}</div> : null}
 
       {success ? (
         <div className={styles.confirmation} role="status">
-          <span className={styles.confirmationLabel}>Reservation created</span>
+          <span className={styles.confirmationLabel}>{DEMO_PREVIEW_MODE ? "Demo reservation preview" : "Reservation created"}</span>
           <strong className={styles.orderNumber}>{success.order.orderNumber}</strong>
-          <p>Your {success.order.quantity === 1 ? "slot is" : `${success.order.quantity} slots are`} held until <strong>{holdDeadline}</strong> while you complete the reservation payment.</p>
+          <p>
+            {DEMO_PREVIEW_MODE ? "A real " : "Your "}
+            {success.order.quantity === 1 ? "slot would be" : `${success.order.quantity} slots would be`} held until <strong>{holdDeadline}</strong> while the reservation payment is completed.
+          </p>
           <div className={styles.confirmationGrid}>
             <div><span>Reservation due</span><strong>{peso(success.order.reservationTotal)}</strong></div>
             <div><span>Balance after reservation</span><strong>{peso(success.order.balanceTotal)}</strong></div>
           </div>
-          <small>Payment has not been recorded yet. Keep your order number for the next step.</small>
+
+          <div className={styles.demoPayment}>
+            <div className={styles.demoPaymentHeading}>
+              <span>Demo payment step</span>
+              <strong>{success.paymentInstructions.method}</strong>
+            </div>
+            <div className={styles.demoWarning}>{success.paymentInstructions.notice}</div>
+            <div className={styles.demoAccount}>
+              <span>Account name</span>
+              <strong>{success.paymentInstructions.accountName}</strong>
+              <span>Account number</span>
+              <strong>{success.paymentInstructions.accountNumber}</strong>
+              <span>Amount to reserve</span>
+              <strong>{peso(success.order.reservationTotal)}</strong>
+            </div>
+            <div className={styles.demoSteps}>
+              <strong>What the customer would do next</strong>
+              <ol>
+                <li>Send the reservation amount through GCash using the payment details shown here.</li>
+                <li>Save the GCash receipt or screenshot.</li>
+                <li>Open Order Status with the order number and the same preorder email.</li>
+                <li>Upload the proof. Payment remains pending until you approve it in Admin.</li>
+              </ol>
+            </div>
+          </div>
+
+          <small>{DEMO_PREVIEW_MODE ? "This demo order is not saved. The live tracker only recognizes real orders." : "Keep your order number. Payment is only confirmed after the uploaded proof is reviewed."}</small>
         </div>
       ) : null}
     </form>

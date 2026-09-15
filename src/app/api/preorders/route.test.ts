@@ -43,7 +43,7 @@ describe("POST /api/preorders", () => {
     expect(calls).toBe(0);
   });
 
-  it("returns 201 with the public order shape", async () => {
+  it("returns 201 with the public order shape and demo payment instructions", async () => {
     const request = new Request("http://localhost/api/preorders", {
       method: "POST",
       headers: { "content-type": "application/json" },
@@ -62,6 +62,13 @@ describe("POST /api/preorders", () => {
         balanceTotal: 249,
         status: "awaiting_payment",
         holdExpiresAt: "2026-09-16T03:00:00.000Z",
+      },
+      paymentInstructions: {
+        isDemo: true,
+        method: "GCash",
+        accountName: "Brick Buddy Demo Account",
+        accountNumber: "09XX XXX XXXX",
+        notice: "DEMO ONLY — do not send real money to this account.",
       },
       remainingSlots: 14,
     });
