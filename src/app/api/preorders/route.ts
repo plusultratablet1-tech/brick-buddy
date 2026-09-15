@@ -13,6 +13,7 @@ type CreateOrderResult = {
   error: RpcError | null;
 };
 type CreateOrder = (input: PreorderInput) => Promise<CreateOrderResult>;
+type NotifyPreorder = typeof enqueueNotification;
 
 async function createOrderWithSupabase(input: PreorderInput): Promise<CreateOrderResult> {
   const supabase = getSupabaseServerClient();
@@ -33,6 +34,7 @@ async function createOrderWithSupabase(input: PreorderInput): Promise<CreateOrde
 export async function handleCreatePreorderRequest(
   request: Request,
   createOrder: CreateOrder = createOrderWithSupabase,
+  notifyPreorder: NotifyPreorder = enqueueNotification,
 ): Promise<Response> {
   let body: unknown;
 
@@ -73,11 +75,15 @@ export async function handleCreatePreorderRequest(
     }
 
     const response = mapOrderRow(row);
-    void enqueueNotification({
-      recipient: validation.value.email,
-      template: "preorder_created",
-      payload: { orderNumber: row.order_number, customerName: validation.value.name },
-    });
+    try {
+      await notifyPreorder({
+        recipient: validation.value.email,
+        template: "preorder_created",
+        payload: { orderNumber: row.order_number, customerName: validation.value.name },
+      });
+    } catch {
+      // Notifications are best-effort and must never roll back a valid preorder.
+    }
 
     return Response.json(response, { status: 201 });
   } catch {
