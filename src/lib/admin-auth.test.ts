@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { validateAdminCredentials } from "./admin-auth";
+import { resolveSupabasePublishableKey, validateAdminCredentials } from "./admin-auth";
 
 describe("admin authentication", () => {
   it("normalizes an email and preserves the password", () => {
@@ -23,5 +23,10 @@ describe("admin authentication", () => {
       ok: false,
       error: "Invalid admin credentials.",
     });
+  });
+
+  it("prefers the configured publishable key and has a public project fallback", () => {
+    expect(resolveSupabasePublishableKey("sb_publishable_configured")).toBe("sb_publishable_configured");
+    expect(resolveSupabasePublishableKey(undefined)).toMatch(/^sb_publishable_/);
   });
 });
