@@ -66,6 +66,8 @@ npm test
 npm run build
 ```
 
+Launch Ready changes are verified in Vercel Preview from the current feature branch before merge.
+
 ## Production
 
 ```bash
