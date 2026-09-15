@@ -4,6 +4,7 @@ import {
   type PreorderInput,
   validatePreorderInput,
 } from "../../../lib/preorders";
+import { enqueueNotification } from "../../../lib/notifications";
 import { getSupabaseServerClient } from "../../../lib/supabase-server";
 
 type RpcError = { message: string };
@@ -12,6 +13,7 @@ type CreateOrderResult = {
   error: RpcError | null;
 };
 type CreateOrder = (input: PreorderInput) => Promise<CreateOrderResult>;
+type NotifyPreorder = typeof enqueueNotification;
 
 async function createOrderWithSupabase(input: PreorderInput): Promise<CreateOrderResult> {
   const supabase = getSupabaseServerClient();
@@ -32,6 +34,7 @@ async function createOrderWithSupabase(input: PreorderInput): Promise<CreateOrde
 export async function handleCreatePreorderRequest(
   request: Request,
   createOrder: CreateOrder = createOrderWithSupabase,
+  notifyPreorder: NotifyPreorder = enqueueNotification,
 ): Promise<Response> {
   let body: unknown;
 
@@ -71,7 +74,18 @@ export async function handleCreatePreorderRequest(
       );
     }
 
-    return Response.json(mapOrderRow(row), { status: 201 });
+    const response = mapOrderRow(row);
+    try {
+      await notifyPreorder({
+        recipient: validation.value.email,
+        template: "preorder_created",
+        payload: { orderNumber: row.order_number, customerName: validation.value.name },
+      });
+    } catch {
+      // Notifications are best-effort and must never roll back a valid preorder.
+    }
+
+    return Response.json(response, { status: 201 });
   } catch {
     return Response.json(
       { error: "We could not create your preorder. Please try again." },
