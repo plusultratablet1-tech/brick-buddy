@@ -15,7 +15,7 @@ describe("Build Ideas page", () => {
     expect(html).toContain("Back to Brick Buddy");
   });
 
-  it("uses the approved page metadata", () => {
-    expect(metadata.title).toBe("Brick Buddy Build Ideas | Bring • Build • Bond");
+  it("uses the approved page title without duplicating the brand template", () => {
+    expect(metadata.title).toEqual({ absolute: "Brick Buddy Build Ideas | Bring • Build • Bond" });
   });
 });
