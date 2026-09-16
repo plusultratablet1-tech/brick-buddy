@@ -3,6 +3,13 @@
 import { FormEvent, useState } from "react";
 import styles from "./order-tracker.module.css";
 
+type PaymentInstructions = {
+  method: string;
+  accountName: string;
+  accountNumber: string;
+  instructions: string;
+};
+
 type CustomerOrder = {
   orderNumber: string;
   quantity: number;
@@ -14,6 +21,7 @@ type CustomerOrder = {
   holdExpiresAt: string;
   payments: { reservation: string; balance: string };
   events: Array<{ type: string; title: string; message: string | null; status: string | null; createdAt: string }>;
+  paymentInstructions: PaymentInstructions | null;
 };
 
 function friendlyStatus(status: string) {
@@ -30,6 +38,10 @@ function friendlyStatus(status: string) {
     cancelled: "Cancelled",
   };
   return labels[status] ?? status.replaceAll("_", " ");
+}
+
+function peso(value: number) {
+  return `₱${value.toLocaleString("en-PH")}`;
 }
 
 export function OrderTracker() {
@@ -103,14 +115,33 @@ export function OrderTracker() {
         {order.status === "awaiting_payment" && order.payments.reservation !== "pending" ? <p className={styles.hint}>Your slot is held until {new Date(order.holdExpiresAt).toLocaleString()} while reservation payment is pending.</p> : null}
         <div className={styles.timeline}>{order.events.length === 0 ? <div className={styles.hint}>Your timeline will appear here as your order moves forward.</div> : order.events.map((item, index) => <div className={styles.event} key={`${item.createdAt}-${index}`}><strong>{item.title}</strong>{item.message ? <div>{item.message}</div> : null}<small>{new Date(item.createdAt).toLocaleString()}</small></div>)}</div>
 
-        {showUpload ? <form className={styles.upload} onSubmit={upload}>
-          <h4>Upload payment proof</h4><p className={styles.hint}>JPG, PNG, WebP, or PDF up to 5 MB. Submitting proof does not mark payment approved until Brick Buddy verifies it.</p>
-          {canReservation && canBalance ? <label className={styles.label}>Payment type<select className={styles.select} value={kind} onChange={(e) => setKind(e.target.value as "reservation" | "balance")}><option value="reservation">Reservation</option><option value="balance">Balance</option></select></label> : null}
-          <div className={styles.two}><label className={styles.label}>Amount paid<input className={styles.input} name="amount" inputMode="numeric" type="number" min="0" max="1000000" defaultValue={expected} required /></label><label className={styles.label}>Proof file<input className={styles.file} name="proof" type="file" accept="image/jpeg,image/png,image/webp,application/pdf" required /></label></div>
-          <label className={styles.label}>Note (optional)<textarea className={styles.textarea} name="note" maxLength={500} placeholder="Reference number or anything we should know" /></label>
-          <input type="hidden" name="kind" value={kind} />
-          <button className={styles.button} disabled={uploading} type="submit">{uploading ? "Uploading…" : `Submit ${kind} proof`}</button>
-        </form> : null}
+        {showUpload && order.paymentInstructions ? <>
+          <div className={styles.paymentInstructions}>
+            <span className={styles.paymentEyebrow}>Payment due</span>
+            <div className={styles.paymentAmount}>{peso(expected)}</div>
+            <dl className={styles.paymentDetails}>
+              <div><dt>Method</dt><dd>{order.paymentInstructions.method}</dd></div>
+              <div><dt>Account name</dt><dd>{order.paymentInstructions.accountName}</dd></div>
+              <div><dt>Account number</dt><dd>{order.paymentInstructions.accountNumber}</dd></div>
+            </dl>
+            {order.paymentInstructions.instructions ? <p>{order.paymentInstructions.instructions}</p> : null}
+            <small>Pay only to the account shown here, keep your receipt, then upload the proof below. Proof is reviewed before payment is approved.</small>
+          </div>
+
+          <form className={styles.upload} onSubmit={upload}>
+            <h4>Upload payment proof</h4><p className={styles.hint}>JPG, PNG, WebP, or PDF up to 5 MB. Submitting proof does not mark payment approved until Brick Buddy verifies it.</p>
+            {canReservation && canBalance ? <label className={styles.label}>Payment type<select className={styles.select} value={kind} onChange={(e) => setKind(e.target.value as "reservation" | "balance")}><option value="reservation">Reservation</option><option value="balance">Balance</option></select></label> : null}
+            <div className={styles.two}><label className={styles.label}>Amount paid<input className={styles.input} name="amount" inputMode="numeric" type="number" min="0" max="1000000" defaultValue={expected} required /></label><label className={styles.label}>Proof file<input className={styles.file} name="proof" type="file" accept="image/jpeg,image/png,image/webp,application/pdf" required /></label></div>
+            <label className={styles.label}>Note (optional)<textarea className={styles.textarea} name="note" maxLength={500} placeholder="Reference number or anything we should know" /></label>
+            <input type="hidden" name="kind" value={kind} />
+            <button className={styles.button} disabled={uploading} type="submit">{uploading ? "Uploading…" : `Submit ${kind} proof`}</button>
+          </form>
+        </> : null}
+
+        {showUpload && !order.paymentInstructions ? <div className={styles.paymentUnavailable}>
+          <strong>Payment instructions are temporarily unavailable.</strong>
+          <span>Please check this tracker again before sending money. Brick Buddy will only ask you to pay to an account published here.</span>
+        </div> : null}
       </div> : null}
     </div>
   );
