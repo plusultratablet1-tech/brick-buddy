@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
-import { BuildIdeaVisual } from "@/components/build-idea-visual";
-import { brickBuddyInventory, buildIdeas } from "@/lib/build-ideas";
+import { BuildIdeaVisual } from "../../components/build-idea-visual";
+import { brickBuddyInventory, buildIdeas } from "../../lib/build-ideas";
 import styles from "./build-ideas.module.css";
 
 export const metadata: Metadata = {
