@@ -4,7 +4,7 @@ import { brickBuddyInventory, buildIdeas } from "../../lib/build-ideas";
 import styles from "./build-ideas.module.css";
 
 export const metadata: Metadata = {
-  title: "Brick Buddy Build Ideas | Bring • Build • Bond",
+  title: { absolute: "Brick Buddy Build Ideas | Bring • Build • Bond" },
   description: "Simple Brick Buddy build ideas, Buddy challenges, and screen-free activities using the pieces included in your Brick Buddy.",
 };
 
