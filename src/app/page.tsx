@@ -1,3 +1,4 @@
+import { BuildIdeasPreview } from "@/components/build-ideas-preview";
 import { OrderTracker } from "@/components/order-tracker";
 import { PreorderForm } from "@/components/preorder-form";
 
@@ -39,6 +40,8 @@ export default function Home() {
       <section className="value-strip"><div><span>☻</span><strong>Family friendly</strong><small>Simple creative play</small></div><div><span>◐</span><strong>Screen-free</strong><small>Hands stay busy</small></div><div><span>⌂</span><strong>Take it anywhere</strong><small>Compact & portable</small></div><div><span>♥</span><strong>Build together</strong><small>Connection over scrolling</small></div></section>
 
       <section className="section" id="product"><div className="section-heading"><div><span className="eyebrow">Everything in one little case</span><h2>What&apos;s inside?</h2></div><p>Brick Buddy keeps the starter kit intentionally simple, so kids can spend more time imagining and less time sorting.</p></div><div className="product-grid">{contents.map((item, index) => <article className="product-card" key={item.title}><div className={`product-art art-${index + 1}`}><span>{item.icon}</span></div><div className="product-number">0{index + 1}</div><h3>{item.title}</h3><p>{item.text}</p></article>)}</div></section>
+
+      <BuildIdeasPreview />
 
       <section className="section how-section" id="how"><div className="section-heading centered"><div><span className="eyebrow">Easy from preorder to playtime</span><h2>How it works</h2></div><p>A small-batch process keeps Season 2 simple and gives every Brick Buddy a proper quality check.</p></div><div className="steps-grid">{steps.map(([number, title, text], index) => <article className="step-card" key={number}><span className="step-number">{number}</span><div className="step-icon">{["✎", "✓", "⚙", "□"][index]}</div><h3>{title}</h3><p>{text}</p></article>)}</div></section>
 
