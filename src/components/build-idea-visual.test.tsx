@@ -1,6 +1,6 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import { buildIdeas } from "@/lib/build-ideas";
+import { buildIdeas } from "../lib/build-ideas";
 import { BuildIdeaVisual } from "./build-idea-visual";
 
 describe("BuildIdeaVisual", () => {
