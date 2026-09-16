@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useCallback, useEffect, useState } from "react";
+import { AdminPaymentSettingsPanel } from "./admin-payment-settings";
 import styles from "./admin.module.css";
 
 type Summary = {
@@ -94,6 +95,7 @@ export function AdminDashboard() {
         <section className={styles.stats} aria-label="Order summary">
           {stats.map(([label, value]) => <div className={styles.stat} key={String(label)}><strong>{value}</strong><span>{label}</span></div>)}
         </section>
+        <AdminPaymentSettingsPanel />
         <section className={styles.card}>
           <form className={styles.tools} onSubmit={submitFilters}>
             <input className={styles.input} placeholder="Order, customer, email or mobile" value={search} onChange={(e) => setSearch(e.target.value)} aria-label="Search orders" />

@@ -25,16 +25,25 @@ const orderResult = {
   error: null,
 };
 
+const activePaymentSettings = {
+  method: "GCash",
+  accountName: "Brick Buddy Owner",
+  accountNumber: "09171234567",
+  instructions: "Save your receipt.",
+};
+
+function preorderRequest(body: unknown = validBody) {
+  return new Request("http://localhost/api/preorders", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(body),
+  });
+}
+
 describe("POST /api/preorders", () => {
   it("returns 400 before calling the database when input is invalid", async () => {
     let calls = 0;
-    const request = new Request("http://localhost/api/preorders", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ ...validBody, quantity: 4 }),
-    });
-
-    const response = await handleCreatePreorderRequest(request, async () => {
+    const response = await handleCreatePreorderRequest(preorderRequest({ ...validBody, quantity: 4 }), async () => {
       calls += 1;
       return { data: null, error: null };
     });
@@ -43,14 +52,13 @@ describe("POST /api/preorders", () => {
     expect(calls).toBe(0);
   });
 
-  it("returns 201 with the public order shape", async () => {
-    const request = new Request("http://localhost/api/preorders", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify(validBody),
-    });
-
-    const response = await handleCreatePreorderRequest(request, async () => orderResult);
+  it("returns 201 with the public order shape and no unpublished payment details", async () => {
+    const response = await handleCreatePreorderRequest(
+      preorderRequest(),
+      async () => orderResult,
+      async () => null,
+      async () => null,
+    );
 
     expect(response.status).toBe(201);
     expect(await response.json()).toEqual({
@@ -64,26 +72,51 @@ describe("POST /api/preorders", () => {
         holdExpiresAt: "2026-09-16T03:00:00.000Z",
       },
       remainingSlots: 14,
+      paymentInstructions: null,
     });
   });
 
-  it("waits for the preorder notification to be durably enqueued before responding", async () => {
-    const request = new Request("http://localhost/api/preorders", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify(validBody),
-    });
+  it("returns active payment instructions after a successful preorder", async () => {
+    const response = await handleCreatePreorderRequest(
+      preorderRequest(),
+      async () => orderResult,
+      async () => null,
+      async () => activePaymentSettings,
+    );
 
+    expect(response.status).toBe(201);
+    const body = await response.json();
+    expect(body.paymentInstructions).toEqual(activePaymentSettings);
+    expect(body.order.reservationTotal).toBe(200);
+  });
+
+  it("keeps an already-created preorder successful when payment settings cannot be loaded", async () => {
+    const response = await handleCreatePreorderRequest(
+      preorderRequest(),
+      async () => orderResult,
+      async () => null,
+      async () => { throw new Error("sensitive payment settings database detail"); },
+    );
+
+    expect(response.status).toBe(201);
+    const body = await response.json();
+    expect(body.order.orderNumber).toBe("BB-S2-001");
+    expect(body.paymentInstructions).toBeNull();
+    expect(JSON.stringify(body)).not.toContain("sensitive payment settings database detail");
+  });
+
+  it("waits for the preorder notification to be durably enqueued before responding", async () => {
     let release!: () => void;
     const gate = new Promise<void>((resolve) => { release = resolve; });
     let settled = false;
     const responsePromise = handleCreatePreorderRequest(
-      request,
+      preorderRequest(),
       async () => orderResult,
       async () => {
         await gate;
         return "notification-1";
       },
+      async () => null,
     ).then((response) => {
       settled = true;
       return response;
@@ -97,29 +130,18 @@ describe("POST /api/preorders", () => {
   });
 
   it("keeps a successful preorder successful if notification enqueue fails", async () => {
-    const request = new Request("http://localhost/api/preorders", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify(validBody),
-    });
-
     const response = await handleCreatePreorderRequest(
-      request,
+      preorderRequest(),
       async () => orderResult,
       async () => { throw new Error("email provider unavailable"); },
+      async () => null,
     );
 
     expect(response.status).toBe(201);
   });
 
   it("returns 409 when Supabase reports insufficient slots", async () => {
-    const request = new Request("http://localhost/api/preorders", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify(validBody),
-    });
-
-    const response = await handleCreatePreorderRequest(request, async () => ({
+    const response = await handleCreatePreorderRequest(preorderRequest(), async () => ({
       data: null,
       error: { message: "INSUFFICIENT_SLOTS" },
     }));
@@ -131,13 +153,7 @@ describe("POST /api/preorders", () => {
   });
 
   it("does not expose raw database errors", async () => {
-    const request = new Request("http://localhost/api/preorders", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify(validBody),
-    });
-
-    const response = await handleCreatePreorderRequest(request, async () => ({
+    const response = await handleCreatePreorderRequest(preorderRequest(), async () => ({
       data: null,
       error: { message: "sensitive database detail" },
     }));
@@ -155,11 +171,7 @@ describe("POST /api/preorders", () => {
       body: "{not-json",
     });
 
-    const response = await handleCreatePreorderRequest(request, async () => ({
-      data: null,
-      error: null,
-    }));
-
+    const response = await handleCreatePreorderRequest(request, async () => ({ data: null, error: null }));
     expect(response.status).toBe(400);
   });
 });

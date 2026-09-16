@@ -1,4 +1,4 @@
-// Generated from Supabase project dyevdriqotjliumnistw on 2026-09-15.
+// Generated from Supabase project dyevdriqotjliumnistw on 2026-09-16.
 export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
 
 export type Database = {
@@ -34,6 +34,12 @@ export type Database = {
         Insert: { balance_amount: number; balance_total: number; batch_id: string; created_at?: string; customer_name: string; email: string; fulfillment: string; hold_expires_at: string; id?: string; mobile: string; order_number: string; quantity: number; reservation_amount: number; reservation_total: number; status?: string; total_amount: number; unit_price: number; updated_at?: string };
         Update: { balance_amount?: number; balance_total?: number; batch_id?: string; created_at?: string; customer_name?: string; email?: string; fulfillment?: string; hold_expires_at?: string; id?: string; mobile?: string; order_number?: string; quantity?: number; reservation_amount?: number; reservation_total?: number; status?: string; total_amount?: number; unit_price?: number; updated_at?: string };
         Relationships: [{ foreignKeyName: "orders_batch_id_fkey"; columns: ["batch_id"]; isOneToOne: false; referencedRelation: "launch_batches"; referencedColumns: ["id"] }];
+      };
+      payment_settings: {
+        Row: { account_name: string; account_number: string; id: string; instructions: string; is_active: boolean; method: string; updated_at: string; updated_by: string | null };
+        Insert: { account_name?: string; account_number?: string; id: string; instructions?: string; is_active?: boolean; method?: string; updated_at?: string; updated_by?: string | null };
+        Update: { account_name?: string; account_number?: string; id?: string; instructions?: string; is_active?: boolean; method?: string; updated_at?: string; updated_by?: string | null };
+        Relationships: [];
       };
       payments: {
         Row: { admin_note: string | null; customer_note: string | null; expected_amount: number; id: string; kind: string; order_id: string; proof_mime_type: string; proof_original_name: string; proof_path: string; reviewed_at: string | null; reviewed_by: string | null; status: string; submitted_amount: number | null; submitted_at: string };
