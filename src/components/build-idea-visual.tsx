@@ -1,5 +1,5 @@
 import type React from "react";
-import type { BuildIdea } from "@/lib/build-ideas";
+import type { BuildIdea } from "../lib/build-ideas";
 import styles from "./build-idea-visual.module.css";
 
 export function BuildIdeaVisual({ build, compact = false }: { build: BuildIdea; compact?: boolean }) {
