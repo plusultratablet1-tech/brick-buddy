@@ -1,0 +1,144 @@
+.preview {
+  width: min(1180px, calc(100% - 40px));
+  margin: 0 auto;
+  padding: 44px;
+  border-radius: 34px;
+  background: linear-gradient(145deg, #fff5dc, #edf6e7);
+  border: 1px solid #e7ddc5;
+  box-shadow: 0 24px 60px rgba(56, 50, 36, 0.08);
+}
+
+.heading {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 36px;
+  align-items: end;
+  margin-bottom: 28px;
+}
+
+.heading h2 {
+  margin: 8px 0 0;
+  font-size: clamp(2.1rem, 4vw, 3.7rem);
+  line-height: 1;
+  letter-spacing: -0.04em;
+}
+
+.heading p {
+  margin: 0;
+  color: #5a696f;
+  line-height: 1.7;
+}
+
+.eyebrow {
+  display: inline-block;
+  color: #3b764c;
+  font-size: 0.78rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.13em;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.card {
+  overflow: hidden;
+  border-radius: 24px;
+  background: white;
+  border: 1px solid #e3dfd2;
+}
+
+.visual {
+  padding: 16px;
+  background: #f5efe2;
+}
+
+.cardCopy {
+  padding: 20px;
+}
+
+.cardCopy > span {
+  display: inline-block;
+  margin-bottom: 8px;
+  color: #3f7550;
+  font-size: 0.74rem;
+  font-weight: 850;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.cardCopy h3 {
+  margin: 0 0 8px;
+  font-size: 1.45rem;
+}
+
+.cardCopy p {
+  margin: 0;
+  color: #627078;
+  line-height: 1.55;
+}
+
+.footerRow {
+  margin-top: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.footerRow > div {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.footerRow > div span {
+  color: #67767b;
+  font-size: 0.9rem;
+}
+
+.footerRow > a {
+  display: inline-flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  padding: 0 20px;
+  border-radius: 14px;
+  background: #17303b;
+  color: white;
+  text-decoration: none;
+  font-weight: 850;
+  box-shadow: 0 6px 0 #0d2028;
+}
+
+@media (max-width: 820px) {
+  .heading,
+  .grid {
+    grid-template-columns: 1fr;
+  }
+
+  .footerRow {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 560px) {
+  .preview {
+    width: min(100% - 24px, 1180px);
+    padding: 24px 18px;
+    border-radius: 26px;
+  }
+
+  .heading {
+    gap: 16px;
+  }
+
+  .footerRow > a {
+    width: 100%;
+  }
+}
