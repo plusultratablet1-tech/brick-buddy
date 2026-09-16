@@ -9,6 +9,13 @@ type Availability = {
   soldOut: boolean;
 };
 
+type PaymentInstructions = {
+  method: string;
+  accountName: string;
+  accountNumber: string;
+  instructions: string;
+};
+
 type PreorderSuccess = {
   order: {
     orderNumber: string;
@@ -20,6 +27,7 @@ type PreorderSuccess = {
     holdExpiresAt: string;
   };
   remainingSlots: number;
+  paymentInstructions: PaymentInstructions | null;
 };
 
 const UNIT_PRICE = 449;
@@ -216,6 +224,26 @@ export function PreorderForm() {
             <div><span>Reservation due</span><strong>{peso(success.order.reservationTotal)}</strong></div>
             <div><span>Balance after reservation</span><strong>{peso(success.order.balanceTotal)}</strong></div>
           </div>
+
+          {success.paymentInstructions ? (
+            <div className={styles.paymentCard}>
+              <span className={styles.paymentEyebrow}>Pay reservation</span>
+              <div className={styles.paymentAmount}>{peso(success.order.reservationTotal)}</div>
+              <dl className={styles.paymentDetails}>
+                <div><dt>Method</dt><dd>{success.paymentInstructions.method}</dd></div>
+                <div><dt>Account name</dt><dd>{success.paymentInstructions.accountName}</dd></div>
+                <div><dt>Account number</dt><dd>{success.paymentInstructions.accountNumber}</dd></div>
+              </dl>
+              {success.paymentInstructions.instructions ? <p>{success.paymentInstructions.instructions}</p> : null}
+              <small>Save your receipt, then use the order tracker to upload payment proof. Uploading proof does not approve the payment until Brick Buddy reviews it.</small>
+            </div>
+          ) : (
+            <div className={styles.paymentUnavailable}>
+              <strong>Payment instructions are not currently published.</strong>
+              <span>Keep your order number and check the tracker before sending payment. Do not send money to any account that is not shown by Brick Buddy.</span>
+            </div>
+          )}
+
           <small>Payment has not been recorded yet. Keep your order number for the next step.</small>
         </div>
       ) : null}
