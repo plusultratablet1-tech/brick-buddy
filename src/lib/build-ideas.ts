@@ -92,8 +92,8 @@ export const buildIdeas: BuildIdea[] = [
     [
       { color: "red", x: 1, y: 1, layer: 0, rotation: 90 },
       { color: "blue", x: 7, y: 1, layer: 0, rotation: 90 },
-      { color: "yellow", x: 2, y: 1, layer: 1, rotation: 0 },
-      { color: "green", x: 4, y: 1, layer: 1, rotation: 0 },
+      { color: "yellow", x: 1, y: 1, layer: 1, rotation: 0 },
+      { color: "green", x: 5, y: 1, layer: 1, rotation: 0 },
     ],
   ),
   build(
@@ -105,15 +105,15 @@ export const buildIdeas: BuildIdea[] = [
     [
       "Place the red and purple bricks underneath as bench supports.",
       "Put the yellow and blue bricks across them to create the seat.",
-      "Add the green brick behind the seat as a backrest.",
+      "Add the green brick on top as a raised backrest.",
     ],
     "Make it taller, remove the backrest, or turn it into a tiny table.",
     [
       { color: "red", x: 1, y: 2, layer: 0, rotation: 90 },
       { color: "purple", x: 7, y: 2, layer: 0, rotation: 90 },
-      { color: "yellow", x: 2, y: 2, layer: 1, rotation: 0 },
-      { color: "blue", x: 4, y: 2, layer: 1, rotation: 0 },
-      { color: "green", x: 3, y: 4, layer: 2, rotation: 0 },
+      { color: "yellow", x: 1, y: 2, layer: 1, rotation: 0 },
+      { color: "blue", x: 5, y: 2, layer: 1, rotation: 0 },
+      { color: "green", x: 3, y: 2, layer: 2, rotation: 0 },
     ],
   ),
   build(
@@ -159,6 +159,21 @@ export const buildIdeas: BuildIdea[] = [
   ),
 ];
 
+function footprint(brick: BrickPlacement) {
+  return {
+    x1: brick.x,
+    y1: brick.y,
+    x2: brick.x + (brick.rotation === 0 ? 4 : 2),
+    y2: brick.y + (brick.rotation === 0 ? 2 : 4),
+  };
+}
+
+function overlaps(a: BrickPlacement, b: BrickPlacement) {
+  const fa = footprint(a);
+  const fb = footprint(b);
+  return fa.x1 < fb.x2 && fa.x2 > fb.x1 && fa.y1 < fb.y2 && fa.y2 > fb.y1;
+}
+
 export function validateBuildIdea(buildIdea: BuildIdea): string[] {
   const errors: string[] = [];
 
@@ -168,7 +183,7 @@ export function validateBuildIdea(buildIdea: BuildIdea): string[] {
 
   const perColor = new Map<BrickColor, number>();
 
-  for (const brick of buildIdea.placements) {
+  for (const [index, brick] of buildIdea.placements.entries()) {
     perColor.set(brick.color, (perColor.get(brick.color) ?? 0) + 1);
 
     if (brick.x < 0 || brick.y < 0 || brick.layer < 0) {
@@ -176,10 +191,23 @@ export function validateBuildIdea(buildIdea: BuildIdea): string[] {
       continue;
     }
 
-    const width = brick.rotation === 0 ? 4 : 2;
-    const depth = brick.rotation === 0 ? 2 : 4;
-    if (brick.x + width > brickBuddyInventory.plate.studsWide || brick.y + depth > brickBuddyInventory.plate.studsDeep) {
+    const bounds = footprint(brick);
+    if (bounds.x2 > brickBuddyInventory.plate.studsWide || bounds.y2 > brickBuddyInventory.plate.studsDeep) {
       errors.push(`places ${brick.color} outside the 6×10 plate`);
+    }
+
+    const sameLayerCollision = buildIdea.placements.some((other, otherIndex) => (
+      otherIndex !== index && other.layer === brick.layer && overlaps(brick, other)
+    ));
+    if (sameLayerCollision) {
+      errors.push(`overlaps bricks on layer ${brick.layer}`);
+    }
+
+    if (brick.layer > 0) {
+      const hasSupport = buildIdea.placements.some((other) => other.layer === brick.layer - 1 && overlaps(brick, other));
+      if (!hasSupport) {
+        errors.push(`leaves ${brick.color} unsupported on layer ${brick.layer}`);
+      }
     }
   }
 
@@ -189,5 +217,5 @@ export function validateBuildIdea(buildIdea: BuildIdea): string[] {
     }
   }
 
-  return errors;
+  return [...new Set(errors)];
 }
