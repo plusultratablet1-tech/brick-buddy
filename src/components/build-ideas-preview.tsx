@@ -1,5 +1,5 @@
 import { BuildIdeaVisual } from "./build-idea-visual";
-import { buildIdeas } from "@/lib/build-ideas";
+import { buildIdeas } from "../lib/build-ideas";
 import styles from "./build-ideas-preview.module.css";
 
 export function BuildIdeasPreview() {
