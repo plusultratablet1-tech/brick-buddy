@@ -8,6 +8,13 @@ const validRequest = () =>
     body: JSON.stringify({ orderNumber: " bb-s2-001 ", email: " Parent@Example.com " }),
   });
 
+const activePaymentSettings = {
+  method: "GCash",
+  accountName: "Brick Buddy Owner",
+  accountNumber: "09171234567",
+  instructions: "Save your receipt.",
+};
+
 const result = {
   order: {
     order_number: "BB-S2-001",
@@ -33,20 +40,106 @@ const result = {
 };
 
 describe("POST /api/orders/lookup", () => {
-  it("normalizes credentials before lookup and returns a customer-safe order", async () => {
+  it("normalizes credentials and suppresses payment instructions when no new payment is due", async () => {
     let received: unknown;
-    const response = await handleOrderLookupRequest(validRequest(), async (credentials) => {
-      received = credentials;
-      return result;
-    });
+    let settingsLoads = 0;
+    const response = await handleOrderLookupRequest(
+      validRequest(),
+      async (credentials) => { received = credentials; return result; },
+      async () => { settingsLoads += 1; return activePaymentSettings; },
+    );
 
     expect(received).toEqual({ orderNumber: "BB-S2-001", email: "parent@example.com" });
     expect(response.status).toBe(200);
     const body = await response.json();
     expect(body.order.orderNumber).toBe("BB-S2-001");
     expect(body.order.payments.reservation).toBe("approved");
+    expect(body.order.paymentInstructions).toBeNull();
+    expect(settingsLoads).toBe(0);
     expect(JSON.stringify(body)).not.toContain("proof_path");
     expect(JSON.stringify(body)).not.toContain("admin_note");
+  });
+
+  it("exposes active instructions when reservation payment is due", async () => {
+    const reservationDue = {
+      ...result,
+      order: { ...result.order, status: "awaiting_payment" },
+      payments: [] as { kind: string; status: string }[],
+    };
+    const response = await handleOrderLookupRequest(
+      validRequest(),
+      async () => reservationDue,
+      async () => activePaymentSettings,
+    );
+    expect(response.status).toBe(200);
+    const body = await response.json();
+    expect(body.order.payments.reservation).toBe("not_submitted");
+    expect(body.order.paymentInstructions).toEqual(activePaymentSettings);
+  });
+
+  it("exposes active instructions again when a rejected reservation proof needs correction", async () => {
+    const reservationRejected = {
+      ...result,
+      order: { ...result.order, status: "awaiting_payment" },
+      payments: [{ kind: "reservation", status: "rejected" }],
+    };
+    const response = await handleOrderLookupRequest(
+      validRequest(),
+      async () => reservationRejected,
+      async () => activePaymentSettings,
+    );
+    expect((await response.json()).order.paymentInstructions).toEqual(activePaymentSettings);
+  });
+
+  it("exposes active instructions when balance payment is due", async () => {
+    const balanceDue = {
+      ...result,
+      order: { ...result.order, status: "balance_due" },
+      payments: [{ kind: "reservation", status: "approved" }],
+    };
+    const response = await handleOrderLookupRequest(
+      validRequest(),
+      async () => balanceDue,
+      async () => activePaymentSettings,
+    );
+    const body = await response.json();
+    expect(body.order.payments.balance).toBe("not_submitted");
+    expect(body.order.paymentInstructions).toEqual(activePaymentSettings);
+  });
+
+  it("does not expose account details while a proof is already pending", async () => {
+    let settingsLoads = 0;
+    const pending = {
+      ...result,
+      order: { ...result.order, status: "awaiting_payment" },
+      payments: [{ kind: "reservation", status: "pending" }],
+    };
+    const response = await handleOrderLookupRequest(
+      validRequest(),
+      async () => pending,
+      async () => { settingsLoads += 1; return activePaymentSettings; },
+    );
+    const body = await response.json();
+    expect(body.order.paymentInstructions).toBeNull();
+    expect(settingsLoads).toBe(0);
+  });
+
+  it("preserves a valid eligible order when payment settings cannot be loaded", async () => {
+    const reservationDue = {
+      ...result,
+      order: { ...result.order, status: "awaiting_payment" },
+      payments: [] as { kind: string; status: string }[],
+    };
+    const response = await handleOrderLookupRequest(
+      validRequest(),
+      async () => reservationDue,
+      async () => { throw new Error("sensitive settings failure"); },
+    );
+    expect(response.status).toBe(200);
+    const body = await response.json();
+    expect(body.order.orderNumber).toBe("BB-S2-001");
+    expect(body.order.paymentInstructions).toBeNull();
+    expect(JSON.stringify(body)).not.toContain("sensitive settings failure");
   });
 
   it("uses the same generic response for invalid credentials", async () => {
