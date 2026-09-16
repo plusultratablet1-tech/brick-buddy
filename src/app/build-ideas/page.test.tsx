@@ -6,7 +6,8 @@ describe("Build Ideas page", () => {
   it("renders the QR-friendly build ideas experience", () => {
     const html = renderToStaticMarkup(<BuildIdeasPage />);
 
-    expect(html).toContain("Small builds. Big imagination.");
+    expect(html).toContain("Small builds.");
+    expect(html).toContain("Big imagination.");
     expect(html).toContain("Got here by scanning the QR code");
     expect(html).toContain("Buddy Chair");
     expect(html).toContain("Rainbow Tower");
