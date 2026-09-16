@@ -4,6 +4,10 @@ import {
   type OrderLookup,
   validateOrderLookup,
 } from "../../../../lib/order-tracking";
+import {
+  getPublicPaymentSettings,
+  type PublicPaymentSettings,
+} from "../../../../lib/payment-settings";
 import { getSupabaseServerClient } from "../../../../lib/supabase-server";
 
 type LookupResult = {
@@ -29,6 +33,7 @@ type LookupResult = {
 };
 
 type LookupOrder = (credentials: OrderLookup) => Promise<LookupResult | null>;
+type LoadPaymentSettings = () => Promise<PublicPaymentSettings | null>;
 
 async function lookupOrderWithSupabase(credentials: OrderLookup): Promise<LookupResult | null> {
   const supabase = getSupabaseServerClient();
@@ -69,6 +74,7 @@ async function lookupOrderWithSupabase(credentials: OrderLookup): Promise<Lookup
 export async function handleOrderLookupRequest(
   request: Request,
   lookupOrder: LookupOrder = lookupOrderWithSupabase,
+  loadPaymentSettings: LoadPaymentSettings = getPublicPaymentSettings,
 ): Promise<Response> {
   let body: unknown;
   try {
@@ -88,8 +94,25 @@ export async function handleOrderLookupRequest(
       return Response.json({ error: GENERIC_LOOKUP_ERROR }, { status: 404 });
     }
 
+    const order = mapCustomerOrder(result.order, result.payments, result.events);
+    const reservationDue =
+      order.status === "awaiting_payment" &&
+      ["not_submitted", "rejected"].includes(order.payments.reservation);
+    const balanceDue =
+      order.status === "balance_due" &&
+      ["not_submitted", "rejected"].includes(order.payments.balance);
+
+    let paymentInstructions: PublicPaymentSettings | null = null;
+    if (reservationDue || balanceDue) {
+      try {
+        paymentInstructions = await loadPaymentSettings();
+      } catch {
+        // Order tracking remains available even if payment settings are temporarily unavailable.
+      }
+    }
+
     return Response.json(
-      { order: mapCustomerOrder(result.order, result.payments, result.events) },
+      { order: { ...order, paymentInstructions } },
       { status: 200 },
     );
   } catch {
