@@ -5,6 +5,10 @@ import {
   validatePreorderInput,
 } from "../../../lib/preorders";
 import { enqueueNotification } from "../../../lib/notifications";
+import {
+  getPublicPaymentSettings,
+  type PublicPaymentSettings,
+} from "../../../lib/payment-settings";
 import { getSupabaseServerClient } from "../../../lib/supabase-server";
 
 type RpcError = { message: string };
@@ -14,6 +18,7 @@ type CreateOrderResult = {
 };
 type CreateOrder = (input: PreorderInput) => Promise<CreateOrderResult>;
 type NotifyPreorder = typeof enqueueNotification;
+type LoadPaymentSettings = () => Promise<PublicPaymentSettings | null>;
 
 async function createOrderWithSupabase(input: PreorderInput): Promise<CreateOrderResult> {
   const supabase = getSupabaseServerClient();
@@ -35,6 +40,7 @@ export async function handleCreatePreorderRequest(
   request: Request,
   createOrder: CreateOrder = createOrderWithSupabase,
   notifyPreorder: NotifyPreorder = enqueueNotification,
+  loadPaymentSettings: LoadPaymentSettings = getPublicPaymentSettings,
 ): Promise<Response> {
   let body: unknown;
 
@@ -85,7 +91,14 @@ export async function handleCreatePreorderRequest(
       // Notifications are best-effort and must never roll back a valid preorder.
     }
 
-    return Response.json(response, { status: 201 });
+    let paymentInstructions: PublicPaymentSettings | null = null;
+    try {
+      paymentInstructions = await loadPaymentSettings();
+    } catch {
+      // A settings outage must never invalidate an order that was already created.
+    }
+
+    return Response.json({ ...response, paymentInstructions }, { status: 201 });
   } catch {
     return Response.json(
       { error: "We could not create your preorder. Please try again." },
