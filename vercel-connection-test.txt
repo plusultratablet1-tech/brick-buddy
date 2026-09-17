@@ -1,3 +1,4 @@
 Brick Buddy GitHub → Vercel connection test
 Created: 2026-09-15
+Last retriggered: 2026-09-17
 Purpose: harmless deployment trigger; no storefront behavior is changed.
