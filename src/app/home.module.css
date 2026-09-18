@@ -381,3 +381,55 @@
   .faq { width: calc(100% - 32px); padding: 90px 0; }
   .footer { padding-left: 22px; padding-right: 22px; }
 }
+
+
+/* Editorial continuity: keep the lower half visually aligned with the product-story sections above. */
+.surpriseVisual {
+  background: #efefec;
+  border: 1px solid #e5e4df;
+}
+
+.surpriseVisual > span {
+  color: rgba(255,255,255,.78);
+}
+
+.figureHead,
+.figureBody,
+.figureLegs {
+  box-shadow: 0 18px 30px rgba(0,0,0,.08);
+}
+
+.howSection {
+  background: #f7f3e8;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+.orderSection :global(.preorder-form),
+.orderSection :global(.tracker-card) {
+  border: 1px solid rgba(255,255,255,.13);
+  border-radius: 18px;
+  box-shadow: none;
+}
+
+.orderSection :global(.preorder-form input),
+.orderSection :global(.preorder-form select),
+.orderSection :global(.track-form input) {
+  background: #f7f7f4;
+  border-color: #deddd7;
+}
+
+.faq {
+  border-top: 1px solid var(--line);
+}
+
+.footer {
+  border-top: 1px solid #dedad0;
+}
+
+@media (max-width: 640px) {
+  .orderSection :global(.preorder-form),
+  .orderSection :global(.tracker-card) {
+    border-radius: 16px;
+  }
+}
