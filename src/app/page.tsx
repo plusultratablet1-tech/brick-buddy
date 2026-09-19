@@ -34,6 +34,7 @@ export default function Home() {
           <a href="#meet">Meet Brick Buddy</a>
           <a href="#inside">What&apos;s inside</a>
           <a href="/build-ideas">Build ideas</a>
+          <a href="/explore">Explore</a>
           <a href="#faq">FAQ</a>
         </nav>
         <a className={styles.headerCta} href="#preorder">Preorder</a>
@@ -220,7 +221,7 @@ export default function Home() {
           <p>Build • Bond • Bring</p>
         </div>
         <div className={styles.footerLinks}>
-          <a href="#meet">Product story</a><a href="/build-ideas">Build ideas</a><a href="#preorder">Preorder & tracking</a><a href="#faq">FAQ</a><a href="/privacy">Privacy</a><a href="/terms">Preorder terms</a><a href="/safety">Safety</a>
+          <a href="#meet">Product story</a><a href="/build-ideas">Build ideas</a><a href="/explore">Explore</a><a href="#preorder">Preorder & tracking</a><a href="#faq">FAQ</a><a href="/privacy">Privacy</a><a href="/terms">Preorder terms</a><a href="/safety">Safety</a>
         </div>
         <div className={styles.footerLegal}>
           <p>Brick Buddy is an independent creative-play product and is not affiliated with, authorized by, sponsored by, or endorsed by the LEGO Group.</p>
